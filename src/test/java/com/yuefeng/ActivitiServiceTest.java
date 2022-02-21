@@ -1,11 +1,16 @@
 package com.yuefeng;
 
 import org.activiti.engine.*;
+import org.activiti.engine.history.HistoricActivityInstance;
+import org.activiti.engine.history.HistoricActivityInstanceQuery;
 import org.activiti.engine.repository.Deployment;
+import org.activiti.engine.repository.ProcessDefinition;
 import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
+import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
+import java.io.*;
 import java.util.List;
 
 /**
@@ -96,7 +101,7 @@ public class ActivitiServiceTest {
      */
     @Test
     public void completeTaskTest() {
-        String assignee = "woker";
+        String assignee = "manager";
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         // 获取TaskService
         TaskService taskService = processEngine.getTaskService();
@@ -108,6 +113,7 @@ public class ActivitiServiceTest {
                 .singleResult();
 
         // 完成任务，参数：任务id
+        if (task == null) return;
         taskService.complete(task.getId());
     }
 
@@ -116,7 +122,7 @@ public class ActivitiServiceTest {
      */
     @Test
     public void deleteDeploymentTest() {
-        String deploymentId = "5001";
+        String deploymentId = "2501";
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         RepositoryService repositoryService = processEngine.getRepositoryService();
         // 删除路程定义，如果流程定义已有启动则删除出错
@@ -129,4 +135,55 @@ public class ActivitiServiceTest {
     /**
      * 下载定义的资源
      */
+    @Test
+    public void repositorySourceDownload() throws IOException {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        RepositoryService repositoryService = processEngine.getRepositoryService();
+        // 得到查询器：processDefinitionQuery,设置查询条件，得到想要的流程定义
+        ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey("myLeave")
+                .singleResult();
+        // 通用流程定义信息，得到部署id
+        String deployId = processDefinition.getDeploymentId();
+        // 通过repositoryService的方法，实现读取图片信息和bpmn信息
+        // png图片流
+        InputStream isPNG = repositoryService.getResourceAsStream(deployId, processDefinition.getDiagramResourceName());
+        // bpmn文件流
+        InputStream isBPMN = repositoryService.getResourceAsStream(deployId, processDefinition.getResourceName());
+        // 构造output stream
+        File filePNG = new File("/Users/yuefengwu/Downloads/myLeave.png");
+        File fileBPMN = new File("/Users/yuefengwu/Downloads/myLeave.bpmn");
+        FileOutputStream bpmnOutPNG = new FileOutputStream(filePNG);
+        FileOutputStream bpmnOutBPMN = new FileOutputStream(fileBPMN);
+        // 输出刘转换
+        IOUtils.copy(isPNG, bpmnOutPNG);
+        IOUtils.copy(isBPMN, bpmnOutBPMN);
+
+        isPNG.close();
+        bpmnOutPNG.close();
+        isBPMN.close();
+        bpmnOutBPMN.close();
+    }
+
+    /**
+     * 打印审批实例进行的过程
+     *
+     */
+    @Test
+    public void findHistoryInfo() {
+        ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
+        HistoryService historyService = processEngine.getHistoryService();
+        HistoricActivityInstanceQuery haiq = historyService.createHistoricActivityInstanceQuery();
+
+        haiq.processInstanceId("7501");
+        haiq.orderByHistoricActivityInstanceStartTime().asc();
+        List<HistoricActivityInstance> activityInstances = haiq.list();
+
+        for (HistoricActivityInstance instance : activityInstances) {
+            System.out.println(instance.getActivityId());
+            System.out.println(instance.getActivityName());
+            System.out.println(instance.getStartTime());
+            System.out.println(" =================== ");
+        }
+    }
 }
