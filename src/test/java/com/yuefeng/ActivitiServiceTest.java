@@ -72,12 +72,32 @@ public class ActivitiServiceTest {
     }
 
     /**
+     * 获取当前正在进行的实例
+     */
+    @Test
+    public void queryProcessInstance() {
+        ProcessEngine processInstance = ProcessEngines.getDefaultProcessEngine();
+        RuntimeService runtimeService = processInstance.getRuntimeService();
+        List<ProcessInstance> processInstances = runtimeService.createProcessInstanceQuery()
+                .processDefinitionKey("myLeave")
+                .list();
+        for (ProcessInstance instance : processInstances) {
+            System.out.println("流程实例id：" + instance.getId());
+            System.out.println("流程实例id：" + instance.getProcessDefinitionId());
+            System.out.println("流程实例名称：" + instance.getProcessDefinitionName());
+            System.out.println("流程实例是否挂起：" + instance.isSuspended());
+            System.out.println("流程实例是否结束：" + instance.isEnded());
+            System.out.println(" =================== ");
+        }
+    }
+
+    /**
      * 查找当前个人待执行的任务
-     *
+     *  查找到的结果集是和这个人所有相关的
      */
     @Test
     public void findPersonalTaskListTest() {
-        String assignee = "manager";
+        String assignee = "woker";
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         // 获取TaskService
         TaskService taskService = processEngine.getTaskService();
@@ -89,6 +109,7 @@ public class ActivitiServiceTest {
             System.out.println("任务id： " + task.getId());
             System.out.println("任务负责人id： " + task.getAssignee());
             System.out.println("任务名称： " + task.getName());
+            System.out.println(" = ==== ============ ");
         }
     }
 
@@ -101,14 +122,14 @@ public class ActivitiServiceTest {
      */
     @Test
     public void completeTaskTest() {
-        String assignee = "manager";
+        String assignee = "woker";
         ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
         // 获取TaskService
         TaskService taskService = processEngine.getTaskService();
         // 根据流程key和任务的负责人查询任务
         // 返回一个任务对象
-        Task task = taskService.createTaskQuery()
-                .processDefinitionKey("myLeave") // 流程key
+        Task task = taskService.createTaskQuery().processInstanceId("20001")
+//                .processDefinitionKey("myLeave") // 流程key
                 .taskAssignee(assignee) // 要查询的负责人
                 .singleResult();
 
