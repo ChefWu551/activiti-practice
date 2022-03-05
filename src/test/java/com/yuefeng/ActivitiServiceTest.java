@@ -204,6 +204,7 @@ public class ActivitiServiceTest {
             System.out.println(instance.getActivityId());
             System.out.println(instance.getActivityName());
             System.out.println(instance.getStartTime());
+            System.out.println(instance.getAssignee());
             System.out.println(" =================== ");
         }
     }
